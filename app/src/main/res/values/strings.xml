@@ -1,0 +1,28 @@
+<resources>
+    <string name="app_name">Math &amp; Word Quest</string>
+    <string name="dashboard_title">My Learning Quest</string>
+    <string name="lessons_header">Interactive Quests 🚀</string>
+    <string name="rewards_header">Trophy Room &amp; Shop 🧸</string>
+    <string name="addition_label">Magic Addition</string>
+    <string name="subtraction_label">Super Subtraction</string>
+    <string name="missing_number_label">Find the Secret Shape</string>
+    <string name="sudoku_label">Mini Sudoku Grid</string>
+    <string name="word_match_label">Word Match Puzzle</string>
+    <string name="spelling_label">Word Speller Match</string>
+    <string name="cube_counting_label">3D Cube Stack Counting</string>
+    <string name="bubble_pop_label">Bubble Pop Run!</string>
+    <string name="toy_shop_label">Toy Box &amp; Sticker Shop</string>
+    
+    <string name="easy_range">Easy: Numbers 1-10</string>
+    <string name="medium_range">Medium: Numbers 1-25</string>
+    <string name="hard_range">Hard: Numbers 1-50</string>
+    
+    <string name="score_label">Stars collected: </string>
+    <string name="streak_label">Consecutive Study Days: </string>
+    <string name="coins_label">Coins: </string>
+    
+    <string name="congrats_header">Magnificent!</string>
+    <string name="perfect_score">Perfect Lesson Award! 🥳</string>
+    <string name="purchase_success">Successfully added to collection!</string>
+    <string name="shop_error">Solve more questions to earn more coins!</string>
+</resources>
