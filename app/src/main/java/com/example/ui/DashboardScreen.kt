@@ -325,6 +325,84 @@ fun DashboardScreen(
                 )
             }
 
+            // High impact card banner for custom Bot Duel Match
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0)),
+                    shape = RoundedCornerShape(24.dp),
+                    border = BorderStroke(2.dp, Color(0xFFFFB74D)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                        .testTag("bot_duel_dashboard_banner")
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(54.dp)
+                                    .background(Color.White, CircleShape)
+                                    .border(1.dp, Color(0xFFFFCC80), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("👾", fontSize = 32.sp)
+                            }
+                            Column {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(Color(0xFFFFE0B2))
+                                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = "NEW BATTLE ARENA 🎮",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = Color(0xFFE65100)
+                                    )
+                                }
+                                Text(
+                                    text = "AI Character Bot Duel! ⚔️",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = ColorHeading
+                                )
+                            }
+                        }
+
+                        Text(
+                            text = "Fill your quest cart with addition, subtraction, multiplication, or division queries! Choose legendary bots like Elsa ❄️, Pikachu ⚡ or Kuromi 😈 and race against their live accuracy score clock!",
+                            fontSize = 13.sp,
+                            color = ColorText,
+                            lineHeight = 18.sp
+                        )
+
+                        Button(
+                            onClick = { onNavigate(Screen.LessonBotDuelSetup) },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF57C00)),
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(46.dp)
+                                .testTag("enter_bot_duel_arena_btn")
+                        ) {
+                            Text(
+                                text = "Enter Battle Arena 🚀",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+                    }
+                }
+            }
+
             // Map layout items representing math topics (styled using Natural Tones)
             item {
                 LessonCard(

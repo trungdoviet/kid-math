@@ -32,7 +32,9 @@ enum class Screen {
     LessonCubeCounting,
     MathMinigame,
     ToyShop,
-    ProfileConfig
+    ProfileConfig,
+    LessonBotDuelSetup,
+    LessonBotDuelPlay
 }
 
 // Math Game State
@@ -44,6 +46,15 @@ data class MathQuestion(
     val options: List<Int>,
     val emojiCountVal1: String = "🍎",
     val emojiCountVal2: String = "🍏"
+)
+
+// Bot Opponent State for Custom Arithmetic Matches
+data class BotOpponent(
+    val name: String,
+    val emoji: String,
+    val level: String, // "Easy", "Medium", "Smart"
+    val delayRange: LongRange, // Delay in ms before making an answer
+    val accuracy: Float // Probability of making a correct answer (0.0 to 1.0)
 )
 
 // Cube Counting Game State
@@ -232,6 +243,259 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 repository.updateNickname(name.trim())
             }
         }
+    }
+
+    // ==========================================
+    // Gamified Bot Duel (Arithmetic Match)
+    // ==========================================
+    // Selected Operations Cart
+    var duelOpAddition by mutableStateOf(true)
+    var duelOpSubtraction by mutableStateOf(false)
+    var duelOpMultiplication by mutableStateOf(false)
+    var duelOpDivision by mutableStateOf(false)
+
+    // Selection properties
+    var duelRangeMin by mutableStateOf(0)
+    var duelRangeMax by mutableStateOf(10)
+    var duelDurationSeconds by mutableStateOf(120) // Default 2 minutes
+    var selectedBot by mutableStateOf(BotOpponent("Pikachu", "⚡", "Easy", 8000L..12000L, 0.58f))
+
+    // Pre-defined Bot Characters
+    val botCharacters = listOf(
+        BotOpponent("Pikachu", "⚡", "Easy", 8000L..12000L, 0.58f),
+        BotOpponent("Mermaid Ariel", "🧜‍♀️", "Easy", 7500L..11500L, 0.65f),
+        BotOpponent("Elsa", "❄️", "Medium", 5000L..8000L, 0.78f),
+        BotOpponent("Kuromi", "😈", "Smart", 3500L..5500L, 0.90f),
+        BotOpponent("Doraemon", "🐱", "Smart", 3000L..4500L, 0.94f)
+    )
+
+    // Match Gameplay State
+    var isDuelActive by mutableStateOf(false)
+    var isDuelFinished by mutableStateOf(false)
+    var duelUserScore by mutableStateOf(0)
+    var duelBotScore by mutableStateOf(0)
+    val duelUserRecent = androidx.compose.runtime.mutableStateListOf<Boolean>()
+    val duelBotRecent = androidx.compose.runtime.mutableStateListOf<Boolean>()
+    var duelTimerRemaining by mutableStateOf(120)
+    var duelBotStatusText by mutableStateOf("")
+    var duelCurrentQuestion by mutableStateOf<MathQuestion?>(null)
+    var duelUserSelectedOption by mutableStateOf<Int?>(null)
+    var duelCoinsAwarded by mutableStateOf(0)
+
+    private var duelTimerJob: Job? = null
+    private var botPlayJob: Job? = null
+
+    fun selectBotOpponent(bot: BotOpponent) {
+        selectedBot = bot
+    }
+
+    fun startDuelMatch() {
+        isDuelActive = true
+        isDuelFinished = false
+        duelUserScore = 0
+        duelBotScore = 0
+        duelUserRecent.clear()
+        duelBotRecent.clear()
+        duelTimerRemaining = duelDurationSeconds
+        duelBotStatusText = "${selectedBot.name} is ready! ⚔️"
+        
+        generateNextDuelQuestion()
+        
+        // Start Ticking Job
+        duelTimerJob?.cancel()
+        duelTimerJob = viewModelScope.launch {
+            while (duelTimerRemaining > 0 && isDuelActive) {
+                delay(1000L)
+                duelTimerRemaining--
+            }
+            if (isDuelActive) {
+                endDuelMatch()
+            }
+        }
+        
+        // Start Bot Play Simulation
+        botPlayJob?.cancel()
+        botPlayJob = viewModelScope.launch {
+            while (duelTimerRemaining > 0 && isDuelActive) {
+                // Wait random duration inside target range
+                val minDelay = selectedBot.delayRange.first
+                val maxDelay = selectedBot.delayRange.last
+                val sleepTime = Random.nextLong(minDelay, maxDelay + 1)
+                delay(sleepTime)
+                
+                if (!isDuelActive) break
+
+                // Bot answers
+                val isCorrect = Random.nextFloat() <= selectedBot.accuracy
+                if (isCorrect) {
+                    duelBotScore++
+                    duelBotRecent.add(true)
+                    duelBotStatusText = "🎉 ${selectedBot.emoji} ${selectedBot.name} solved a question!"
+                } else {
+                    duelBotRecent.add(false)
+                    duelBotStatusText = "❌ ${selectedBot.emoji} ${selectedBot.name} made an error!"
+                }
+                
+                if (duelBotRecent.size > 8) {
+                    duelBotRecent.removeAt(0)
+                }
+                
+                delay(1500L)
+                if (isDuelActive) {
+                    duelBotStatusText = "🤔 ${selectedBot.name} is thinking..."
+                }
+            }
+        }
+    }
+
+    fun generateNextDuelQuestion() {
+        val ops = mutableListOf<String>()
+        if (duelOpAddition) ops.add("+")
+        if (duelOpSubtraction) ops.add("-")
+        if (duelOpMultiplication) ops.add("*")
+        if (duelOpDivision) ops.add("/")
+        
+        if (ops.isEmpty()) ops.add("+") // Safe fallback
+        
+        val op = ops.random()
+        val min = duelRangeMin
+        val max = duelRangeMax
+        
+        val countingEmojis = when (op) {
+            "+" -> listOf("🍎", "🍓", "🍌", "🥕", "🏀", "🐞", "🚗", "🍬", "🦖", "🍦")
+            "-" -> listOf("🍇", "🍐", "🍑", "🍒", "⚽️", "🧸", "✈️", "🍭", "🍩", "🍪")
+            "*" -> listOf("🍏", "🍋", "🍍", "🥑", "🧁", "🍄", "⭐", "🎈", "🎲", "🧩")
+            else -> listOf("🍊", "🍉", "🍒", "🥝", "🍩", "🔔", "🪁", "🎁", "🎨", "🧶")
+        }
+        
+        var val1 = 0
+        var val2 = 0
+        var correctAns = 0
+
+        when (op) {
+            "+" -> {
+                if (min == 0) {
+                    val1 = Random.nextInt(0, max + 1)
+                    val2 = Random.nextInt(0, (max - val1).coerceAtLeast(1))
+                } else {
+                    val1 = Random.nextInt(min, max - 1)
+                    val2 = Random.nextInt(1, (max - val1).coerceAtLeast(2))
+                }
+                correctAns = val1 + val2
+            }
+            "-" -> {
+                if (min == 0) {
+                    val1 = Random.nextInt(1, max + 1)
+                    val2 = Random.nextInt(0, val1 + 1)
+                } else {
+                    val1 = Random.nextInt(min + 2, max + 1)
+                    val2 = Random.nextInt(1, (val1 - min).coerceAtLeast(2))
+                }
+                correctAns = val1 - val2
+            }
+            "*" -> {
+                var success = false
+                var attempts = 0
+                val localMin = if (min == 0) 1 else min
+                while (!success && attempts < 100) {
+                    val1 = Random.nextInt(1, (max / 2 + 1).coerceAtLeast(3))
+                    val2 = Random.nextInt(1, (max / 2 + 1).coerceAtLeast(3))
+                    correctAns = val1 * val2
+                    if (correctAns in localMin..max) {
+                        success = true
+                    }
+                    attempts++
+                }
+                if (!success) {
+                    val1 = 2
+                    val2 = 3
+                    correctAns = 6
+                }
+            }
+            "/" -> {
+                val localMin = if (min == 0) 1 else min
+                correctAns = Random.nextInt(localMin, max + 1)
+                val2 = when {
+                    correctAns > 20 -> Random.nextInt(1, 4)
+                    correctAns > 10 -> Random.nextInt(1, 5)
+                    else -> Random.nextInt(2, 6)
+                }
+                val1 = correctAns * val2
+            }
+        }
+
+        val optionsSet = mutableSetOf(correctAns)
+        while (optionsSet.size < 4) {
+            val offset = Random.nextInt(-5, 6)
+            val distractor = correctAns + offset
+            if (distractor >= 0 && distractor != correctAns && distractor <= (max * 1.5).toInt()) {
+                optionsSet.add(distractor)
+            }
+        }
+
+        val emoji = countingEmojis.random()
+        duelCurrentQuestion = MathQuestion(
+            val1 = val1,
+            val2 = val2,
+            op = op,
+            correctAnswer = correctAns,
+            options = optionsSet.toList().shuffled(),
+            emojiCountVal1 = emoji,
+            emojiCountVal2 = emoji
+        )
+        duelUserSelectedOption = null
+    }
+
+    fun submitDuelOption(option: Int) {
+        if (duelUserSelectedOption != null) return
+        duelUserSelectedOption = option
+        
+        val isCorrect = option == duelCurrentQuestion?.correctAnswer
+        if (isCorrect) {
+            duelUserScore++
+            duelUserRecent.add(true)
+        } else {
+            duelUserRecent.add(false)
+        }
+        
+        if (duelUserRecent.size > 8) {
+            duelUserRecent.removeAt(0)
+        }
+        
+        viewModelScope.launch {
+            delay(350L)
+            if (isDuelActive && !isDuelFinished) {
+                generateNextDuelQuestion()
+            }
+        }
+    }
+
+    fun endDuelMatch() {
+        isDuelActive = false
+        isDuelFinished = true
+        duelTimerJob?.cancel()
+        botPlayJob?.cancel()
+        
+        val baseCoins = 5
+        val scoreCoins = duelUserScore * 1
+        val resultBonus = when {
+            duelUserScore > duelBotScore -> 15
+            duelUserScore == duelBotScore -> 8
+            else -> 0
+        }
+        duelCoinsAwarded = baseCoins + scoreCoins + resultBonus
+        
+        viewModelScope.launch {
+            repository.addCoins(duelCoinsAwarded)
+        }
+    }
+
+    fun exitDuelMatch() {
+        isDuelActive = false
+        isDuelFinished = false
+        duelTimerJob?.cancel()
+        botPlayJob?.cancel()
+        navigateTo(Screen.Dashboard)
     }
 
     // ==========================================

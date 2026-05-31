@@ -141,6 +141,18 @@ class MainActivity : ComponentActivity() {
                                             onBack = { mainViewModel.navigateTo(Screen.Dashboard) }
                                         )
                                     }
+                                    Screen.LessonBotDuelSetup -> {
+                                        BotDuelSetupScreen(
+                                            viewModel = mainViewModel,
+                                            onBack = { mainViewModel.navigateTo(Screen.Dashboard) }
+                                        )
+                                    }
+                                    Screen.LessonBotDuelPlay -> {
+                                        BotDuelPlayScreen(
+                                            viewModel = mainViewModel,
+                                            onBack = { mainViewModel.exitDuelMatch() }
+                                        )
+                                    }
                                     Screen.ToyShop -> {
                                         ToyShopScreen(
                                             viewModel = mainViewModel,
