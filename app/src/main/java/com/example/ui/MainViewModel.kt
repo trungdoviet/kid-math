@@ -22,6 +22,9 @@ enum class Screen {
     Dashboard,
     LessonAddition,
     LessonSubtraction,
+    LessonMultiplication,
+    LessonDivision,
+    LessonMathSetup,
     LessonMissingNum,
     LessonSudoku,
     LessonWordMatch,
@@ -143,8 +146,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         currentScreen = screen
         // Regenerate respective games when entering pages
         when (screen) {
-            Screen.LessonAddition -> generateAdditionLesson()
-            Screen.LessonSubtraction -> generateSubtractionLesson()
+            Screen.LessonAddition -> generateMathQuest()
+            Screen.LessonSubtraction -> generateMathQuest()
+            Screen.LessonMultiplication -> generateMathQuest()
+            Screen.LessonDivision -> generateMathQuest()
             Screen.LessonMissingNum -> generateMissingNumberLesson()
             Screen.LessonSudoku -> generateSudokuQuiz()
             Screen.LessonWordMatch -> generateWordMatchingLesson()
@@ -230,7 +235,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     // ==========================================
-    // Math Lesson: Addition state & code
+    // Math Lesson: Unified Range-Selectable Arithmetic
     // ==========================================
     var mathQuizIndex by mutableStateOf(0)
     var mathScore by mutableStateOf(0)
@@ -240,31 +245,118 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     var isMathAnswerCorrect by mutableStateOf(false)
     val totalMathQuizCount = 5
 
-    fun generateAdditionLesson() {
+    // Selection properties
+    var selectedMathOp by mutableStateOf("+") // "+", "-", "*", "/"
+    var selectedRangeMin by mutableStateOf(0)
+    var selectedRangeMax by mutableStateOf(10)
+
+    fun selectMathOpAndNavigate(op: String) {
+        selectedMathOp = op
         val profile = profileState.value ?: StudentProfile()
-        // Level dictates difficulty
-        // Easy (Level 1-3): numbers 1-10
-        // Med (Level 4-6): numbers 1-20
-        // Hard (Level 7-10): numbers 1-50
-        val maxNum = when {
-            profile.additionLevel <= 3 -> 10
-            profile.additionLevel <= 6 -> 25
-            else -> 50
+        val currentLevel = when (op) {
+            "+" -> profile.additionLevel
+            "-" -> profile.subtractionLevel
+            "*" -> profile.multiplicationLevel
+            else -> profile.divisionLevel
         }
+        // Be helpful: pre-set range defaults based on the student's level
+        when {
+            currentLevel <= 3 -> {
+                selectedRangeMin = 0
+                selectedRangeMax = 10
+            }
+            currentLevel <= 6 -> {
+                selectedRangeMin = 0
+                selectedRangeMax = 20
+            }
+            currentLevel <= 8 -> {
+                selectedRangeMin = 20
+                selectedRangeMax = 50
+            }
+            else -> {
+                selectedRangeMin = 50
+                selectedRangeMax = 100
+            }
+        }
+        navigateTo(Screen.LessonMathSetup)
+    }
+
+    fun generateMathQuest() {
+        val op = selectedMathOp
+        val min = selectedRangeMin
+        val max = selectedRangeMax
 
         mathQuestions.clear()
-        val countingEmojis = listOf("🍎", "🍓", "🍌", "🥕", "🏀", "🐞", "🚗", "🍬", "🦖", "🍦")
+        val countingEmojis = when (op) {
+            "+" -> listOf("🍎", "🍓", "🍌", "🥕", "🏀", "🐞", "🚗", "🍬", "🦖", "🍦")
+            "-" -> listOf("🍇", "🍐", "🍑", "🍒", "⚽️", "🧸", "✈️", "🍭", "🍩", "🍪")
+            "*" -> listOf("🍏", "🍋", "🍍", "🥑", "🧁", "🍄", "⭐", "🎈", "🎲", "🧩")
+            else -> listOf("🍊", "🍉", "🍒", "🥝", "🍩", "🔔", "🪁", "🎁", "🎨", "🧶")
+        }
+
         for (i in 0 until totalMathQuizCount) {
-            val val1 = Random.nextInt(1, maxNum / 2 + 2)
-            val val2 = Random.nextInt(1, maxNum / 2 + 2)
-            val correctAns = val1 + val2
+            var val1 = 0
+            var val2 = 0
+            var correctAns = 0
+
+            when (op) {
+                "+" -> {
+                    if (min == 0) {
+                        val1 = Random.nextInt(0, max + 1)
+                        val2 = Random.nextInt(0, (max - val1).coerceAtLeast(1))
+                    } else {
+                        val1 = Random.nextInt(min, max - 1)
+                        val2 = Random.nextInt(1, (max - val1).coerceAtLeast(2))
+                    }
+                    correctAns = val1 + val2
+                }
+                "-" -> {
+                    if (min == 0) {
+                        val1 = Random.nextInt(1, max + 1)
+                        val2 = Random.nextInt(0, val1 + 1)
+                    } else {
+                        val1 = Random.nextInt(min + 2, max + 1)
+                        val2 = Random.nextInt(1, (val1 - min).coerceAtLeast(2))
+                    }
+                    correctAns = val1 - val2
+                }
+                "*" -> {
+                    var success = false
+                    var attempts = 0
+                    val localMin = if (min == 0) 1 else min
+                    while (!success && attempts < 100) {
+                        val1 = Random.nextInt(1, (max / 2 + 1).coerceAtLeast(3))
+                        val2 = Random.nextInt(1, (max / 2 + 1).coerceAtLeast(3))
+                        correctAns = val1 * val2
+                        if (correctAns in localMin..max) {
+                            success = true
+                        }
+                        attempts++
+                    }
+                    if (!success) {
+                        val1 = 2
+                        val2 = 3
+                        correctAns = 6
+                    }
+                }
+                "/" -> {
+                    val localMin = if (min == 0) 1 else min
+                    correctAns = Random.nextInt(localMin, max + 1)
+                    val2 = when {
+                        correctAns > 20 -> Random.nextInt(1, 3)
+                        correctAns > 10 -> Random.nextInt(1, 4)
+                        else -> Random.nextInt(2, 6)
+                    }
+                    val1 = correctAns * val2
+                }
+            }
 
             // Generate distractors
             val optionsSet = mutableSetOf(correctAns)
             while (optionsSet.size < 4) {
-                val offset = Random.nextInt(-4, 5)
+                val offset = Random.nextInt(-5, 6)
                 val distractor = correctAns + offset
-                if (distractor > 0 && distractor != correctAns) {
+                if (distractor >= 0 && distractor != correctAns && distractor <= (max * 1.5).toInt()) {
                     optionsSet.add(distractor)
                 }
             }
@@ -274,7 +366,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 MathQuestion(
                     val1 = val1,
                     val2 = val2,
-                    op = "+",
+                    op = op,
                     correctAnswer = correctAns,
                     options = optionsSet.toList().shuffled(),
                     emojiCountVal1 = emoji,
@@ -309,89 +401,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             isMathAnswerChecked = false
             isMathAnswerCorrect = false
         } else {
-            // Save Progress and Reward
+            val type = when (selectedMathOp) {
+                "+" -> "addition"
+                "-" -> "subtraction"
+                "*" -> "multiplication"
+                else -> "division"
+            }
             viewModelScope.launch {
                 repository.updateLessonProgress(
-                    lessonType = "addition",
-                    correctAnswers = mathScore,
-                    totalQuestions = totalMathQuizCount,
-                    solvedInc = mathScore
-                )
-                navigateTo(Screen.Dashboard)
-            }
-        }
-    }
-
-    // ==========================================
-    // Math Lesson: Subtraction state & code
-    // ==========================================
-    fun generateSubtractionLesson() {
-        val profile = profileState.value ?: StudentProfile()
-        val maxNum = when {
-            profile.subtractionLevel <= 3 -> 10
-            profile.subtractionLevel <= 6 -> 25
-            else -> 50
-        }
-
-        mathQuestions.clear()
-        val countingEmojis = listOf("🍇", "🍐", "🍑", "🍒", "⚽️", "🧸", "✈️", "🍭", "🍩", "🍪")
-        for (i in 0 until totalMathQuizCount) {
-            val val1 = Random.nextInt(3, maxNum + 1)
-            val val2 = Random.nextInt(1, val1) // avoid negatives
-            val correctAns = val1 - val2
-
-            val optionsSet = mutableSetOf(correctAns)
-            while (optionsSet.size < 4) {
-                val offset = Random.nextInt(-4, 5)
-                val distractor = correctAns + offset
-                if (distractor >= 0 && distractor != correctAns) {
-                    optionsSet.add(distractor)
-                }
-            }
-
-            val emoji = countingEmojis.random()
-            mathQuestions.add(
-                MathQuestion(
-                    val1 = val1,
-                    val2 = val2,
-                    op = "-",
-                    correctAnswer = correctAns,
-                    options = optionsSet.toList().shuffled(),
-                    emojiCountVal1 = emoji,
-                    emojiCountVal2 = emoji
-                )
-            )
-        }
-
-        mathQuizIndex = 0
-        mathScore = 0
-        selectedMathOption = null
-        isMathAnswerChecked = false
-        isMathAnswerCorrect = false
-    }
-
-    fun submitSubtractionAnswer(selectedOption: Int) {
-        selectedMathOption = selectedOption
-        isMathAnswerChecked = true
-        val currentQ = mathQuestions[mathQuizIndex]
-        if (selectedOption == currentQ.correctAnswer) {
-            isMathAnswerCorrect = true
-            mathScore++
-        } else {
-            isMathAnswerCorrect = false
-        }
-    }
-
-    fun nextSubtractionQuestion() {
-        if (mathQuizIndex < totalMathQuizCount - 1) {
-            mathQuizIndex++
-            selectedMathOption = null
-            isMathAnswerChecked = false
-            isMathAnswerCorrect = false
-        } else {
-            viewModelScope.launch {
-                repository.updateLessonProgress(
-                    lessonType = "subtraction",
+                    lessonType = type,
                     correctAnswers = mathScore,
                     totalQuestions = totalMathQuizCount,
                     solvedInc = mathScore

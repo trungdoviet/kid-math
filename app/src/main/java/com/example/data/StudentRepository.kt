@@ -105,6 +105,20 @@ class StudentRepository(private val dao: StudentProfileDao) {
                     totalMathSolved = profile.totalMathSolved + solvedInc
                 )
             }
+            "multiplication" -> {
+                val newLevel = if (correctAnswers >= 4 && profile.multiplicationLevel < 10) profile.multiplicationLevel + 1 else profile.multiplicationLevel
+                updatedProfile = updatedProfile.copy(
+                    multiplicationLevel = newLevel,
+                    totalMathSolved = profile.totalMathSolved + solvedInc
+                )
+            }
+            "division" -> {
+                val newLevel = if (correctAnswers >= 4 && profile.divisionLevel < 10) profile.divisionLevel + 1 else profile.divisionLevel
+                updatedProfile = updatedProfile.copy(
+                    divisionLevel = newLevel,
+                    totalMathSolved = profile.totalMathSolved + solvedInc
+                )
+            }
             "missing" -> {
                 val newLevel = if (correctAnswers >= 4 && profile.missingNumberLevel < 10) profile.missingNumberLevel + 1 else profile.missingNumberLevel
                 updatedProfile = updatedProfile.copy(

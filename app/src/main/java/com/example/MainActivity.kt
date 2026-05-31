@@ -78,14 +78,30 @@ class MainActivity : ComponentActivity() {
                                     Screen.LessonAddition -> {
                                         ArithmeticQuizScreen(
                                             viewModel = mainViewModel,
-                                            isAddition = true,
                                             onBack = { mainViewModel.navigateTo(Screen.Dashboard) }
                                         )
                                     }
                                     Screen.LessonSubtraction -> {
                                         ArithmeticQuizScreen(
                                             viewModel = mainViewModel,
-                                            isAddition = false,
+                                            onBack = { mainViewModel.navigateTo(Screen.Dashboard) }
+                                        )
+                                    }
+                                    Screen.LessonMultiplication -> {
+                                        ArithmeticQuizScreen(
+                                            viewModel = mainViewModel,
+                                            onBack = { mainViewModel.navigateTo(Screen.Dashboard) }
+                                        )
+                                    }
+                                    Screen.LessonDivision -> {
+                                        ArithmeticQuizScreen(
+                                            viewModel = mainViewModel,
+                                            onBack = { mainViewModel.navigateTo(Screen.Dashboard) }
+                                        )
+                                    }
+                                    Screen.LessonMathSetup -> {
+                                        MathSetupScreen(
+                                            viewModel = mainViewModel,
                                             onBack = { mainViewModel.navigateTo(Screen.Dashboard) }
                                         )
                                     }

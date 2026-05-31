@@ -1,5 +1,5 @@
 {
-  "name": "Math & Word Quest",
+  "name": "Kidmath",
   "description": "An interactive, gamified math and word puzzle app designed for 7-8 year olds to master addition, subtraction, simple Sudoku, spelling, and vocabulary. Features customizable profiles, playful trophies, study streaks, and bubble-popping lessons.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

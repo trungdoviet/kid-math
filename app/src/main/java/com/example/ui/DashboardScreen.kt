@@ -341,7 +341,7 @@ fun DashboardScreen(
                     progressTrackColor = Color(0xFFFFCDD2),
                     tag = "math_addition_lesson_button"
                 ) {
-                    onNavigate(Screen.LessonAddition)
+                    viewModel.selectMathOpAndNavigate("+")
                 }
             }
 
@@ -360,7 +360,45 @@ fun DashboardScreen(
                     progressTrackColor = Color(0xFFFFCDD2),
                     tag = "math_subtraction_lesson_button"
                 ) {
-                    onNavigate(Screen.LessonSubtraction)
+                    viewModel.selectMathOpAndNavigate("-")
+                }
+            }
+
+            item {
+                LessonCard(
+                    title = stringResource(R.string.multiplication_label),
+                    subtitle = "Grid puzzle multiplications!",
+                    levelStr = "Level ${profile.multiplicationLevel}",
+                    progressFraction = profile.multiplicationLevel / 10f,
+                    icon = "✖️",
+                    backgroundColor = Color(0xFFFFF4E5),
+                    borderColor = Color(0xFFF6E2C9),
+                    textColor = Color(0xFF7E5D3E),
+                    subtextColor = Color(0xFF9A7D5E),
+                    progressColor = Color(0xFFFFB74D),
+                    progressTrackColor = Color(0xFFFFE0B2),
+                    tag = "math_multiplication_lesson_button"
+                ) {
+                    viewModel.selectMathOpAndNavigate("*")
+                }
+            }
+
+            item {
+                LessonCard(
+                    title = stringResource(R.string.division_label),
+                    subtitle = "Equally share delicious treats!",
+                    levelStr = "Level ${profile.divisionLevel}",
+                    progressFraction = profile.divisionLevel / 10f,
+                    icon = "➗",
+                    backgroundColor = Color(0xFFFFF4E5),
+                    borderColor = Color(0xFFF6E2C9),
+                    textColor = Color(0xFF7E5D3E),
+                    subtextColor = Color(0xFF9A7D5E),
+                    progressColor = Color(0xFFFFA726),
+                    progressTrackColor = Color(0xFFFFE0B2),
+                    tag = "math_division_lesson_button"
+                ) {
+                    viewModel.selectMathOpAndNavigate("/")
                 }
             }
 

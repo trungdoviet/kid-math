@@ -1,10 +1,13 @@
 <resources>
-    <string name="app_name">Math &amp; Word Quest</string>
+    <string name="app_name">Kidmath</string>
     <string name="dashboard_title">My Learning Quest</string>
     <string name="lessons_header">Interactive Quests 🚀</string>
     <string name="rewards_header">Trophy Room &amp; Shop 🧸</string>
     <string name="addition_label">Magic Addition</string>
     <string name="subtraction_label">Super Subtraction</string>
+    <string name="multiplication_label">Cool Multiplication</string>
+    <string name="division_label">Clever Division</string>
+    <string name="math_setup_label">Math Practice Builder</string>
     <string name="missing_number_label">Find the Secret Shape</string>
     <string name="sudoku_label">Mini Sudoku Grid</string>
     <string name="word_match_label">Word Match Puzzle</string>

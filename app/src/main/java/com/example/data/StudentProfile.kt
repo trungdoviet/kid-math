@@ -15,6 +15,8 @@ data class StudentProfile(
     // Level progress status (0 = Not started, 10 = Max Level)
     val additionLevel: Int = 1,
     val subtractionLevel: Int = 1,
+    val multiplicationLevel: Int = 1,
+    val divisionLevel: Int = 1,
     val missingNumberLevel: Int = 1,
     val sudokuLevel: Int = 1,
     val wordMatchingLevel: Int = 1,
