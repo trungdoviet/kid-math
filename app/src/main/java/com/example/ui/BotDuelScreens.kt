@@ -121,7 +121,11 @@ fun BotDuelSetupScreen(
                         viewModel.duelOpAddition,
                         viewModel.duelOpSubtraction,
                         viewModel.duelOpMultiplication,
-                        viewModel.duelOpDivision
+                        viewModel.duelOpDivision,
+                        viewModel.duelOpCubes,
+                        viewModel.duelOpSequences,
+                        viewModel.duelOpCompare,
+                        viewModel.duelOpWordQuest
                     ).count { it }
 
                     Row(
@@ -173,6 +177,58 @@ fun BotDuelSetupScreen(
                                 }
                             },
                             modifier = Modifier.weight(1f).testTag("select_division_duel")
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OperationToggleChip(
+                            label = "Cubes 🧱",
+                            isChecked = viewModel.duelOpCubes,
+                            onToggle = {
+                                if (activeOpsCount > 1 || !viewModel.duelOpCubes) {
+                                    viewModel.duelOpCubes = !viewModel.duelOpCubes
+                                }
+                            },
+                            modifier = Modifier.weight(1f).testTag("select_cubes_duel")
+                        )
+                        OperationToggleChip(
+                            label = "Sequences 🚂",
+                            isChecked = viewModel.duelOpSequences,
+                            onToggle = {
+                                if (activeOpsCount > 1 || !viewModel.duelOpSequences) {
+                                    viewModel.duelOpSequences = !viewModel.duelOpSequences
+                                }
+                            },
+                            modifier = Modifier.weight(1f).testTag("select_sequences_duel")
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OperationToggleChip(
+                            label = "Compare ⚖️",
+                            isChecked = viewModel.duelOpCompare,
+                            onToggle = {
+                                if (activeOpsCount > 1 || !viewModel.duelOpCompare) {
+                                    viewModel.duelOpCompare = !viewModel.duelOpCompare
+                                }
+                            },
+                            modifier = Modifier.weight(1f).testTag("select_compare_duel")
+                        )
+                        OperationToggleChip(
+                            label = "Word Puzzles 🧩",
+                            isChecked = viewModel.duelOpWordQuest,
+                            onToggle = {
+                                if (activeOpsCount > 1 || !viewModel.duelOpWordQuest) {
+                                    viewModel.duelOpWordQuest = !viewModel.duelOpWordQuest
+                                }
+                            },
+                            modifier = Modifier.weight(1f).testTag("select_wordpuzzles_duel")
                         )
                     }
                 }
@@ -303,7 +359,150 @@ fun BotDuelSetupScreen(
                 }
             }
 
-            // 3. CHOOSE BOT OPPONENT
+            // 3. QUEST SETTINGS (IF COMPATIBLE ONES SELECTED)
+            if (viewModel.duelOpCubes || viewModel.duelOpSequences || viewModel.duelOpCompare || viewModel.duelOpWordQuest) {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = ColorCreamSurface),
+                    shape = RoundedCornerShape(20.dp),
+                    border = BorderStroke(1.dp, ColorCreamBorder),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        Text(
+                            text = "🛠️ Step 3: Customize Quest Settings",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = ColorHeading
+                        )
+                        Text(
+                            text = "Configure specific challenge parameters for your active extra quests!",
+                            fontSize = 12.sp,
+                            color = ColorText
+                        )
+
+                        // Cube Config
+                        if (viewModel.duelOpCubes) {
+                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text("🧱 Cube stack height limit:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = ColorHeading)
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    listOf(3, 4, 5).forEach { h ->
+                                        val isSelected = viewModel.duelCubesMaxHeight == h
+                                        Box(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clip(RoundedCornerShape(10.dp))
+                                                .background(if (isSelected) ColorGreenPrimary else ColorTealBg)
+                                                .clickable { viewModel.duelCubesMaxHeight = h }
+                                                .border(1.dp, if (isSelected) ColorGreenPrimary else ColorTealBorder, RoundedCornerShape(10.dp))
+                                                .padding(vertical = 8.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = "Max $h blocks",
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 12.sp,
+                                                color = if (isSelected) Color.White else ColorHeading
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Sequences Config
+                        if (viewModel.duelOpSequences) {
+                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text("🚂 Sequence patterns complexity:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = ColorHeading)
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    listOf("Simple" to "Easy Steps", "All" to "All Patterns 🧠").forEach { (v, lbl) ->
+                                        val isSelected = viewModel.duelSequencesDifficulty == v
+                                        Box(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clip(RoundedCornerShape(10.dp))
+                                                .background(if (isSelected) ColorGreenPrimary else ColorTealBg)
+                                                .clickable { viewModel.duelSequencesDifficulty = v }
+                                                .border(1.dp, if (isSelected) ColorGreenPrimary else ColorTealBorder, RoundedCornerShape(10.dp))
+                                                .padding(vertical = 8.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = lbl,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 12.sp,
+                                                color = if (isSelected) Color.White else ColorHeading
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Compare Config
+                        if (viewModel.duelOpCompare) {
+                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text("⚖️ Compare counting scale max range:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = ColorHeading)
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    listOf(10, 20, 50).forEach { lim ->
+                                        val isSelected = viewModel.duelCompareLimit == lim
+                                        Box(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clip(RoundedCornerShape(10.dp))
+                                                .background(if (isSelected) ColorGreenPrimary else ColorTealBg)
+                                                .clickable { viewModel.duelCompareLimit = lim }
+                                                .border(1.dp, if (isSelected) ColorGreenPrimary else ColorTealBorder, RoundedCornerShape(10.dp))
+                                                .padding(vertical = 8.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = "Up to $lim",
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 12.sp,
+                                                color = if (isSelected) Color.White else ColorHeading
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // WordQuest Config
+                        if (viewModel.duelOpWordQuest) {
+                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text("🧩 Word puzzles sequence max limit:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = ColorHeading)
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    listOf(20, 50, 100).forEach { lim ->
+                                        val isSelected = viewModel.duelWordQuestMax == lim
+                                        Box(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clip(RoundedCornerShape(10.dp))
+                                                .background(if (isSelected) ColorGreenPrimary else ColorTealBg)
+                                                .clickable { viewModel.duelWordQuestMax = lim }
+                                                .border(1.dp, if (isSelected) ColorGreenPrimary else ColorTealBorder, RoundedCornerShape(10.dp))
+                                                .padding(vertical = 8.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = "Up to $lim",
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 12.sp,
+                                                color = if (isSelected) Color.White else ColorHeading
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 4. CHOOSE BOT OPPONENT
             Card(
                 colors = CardDefaults.cardColors(containerColor = ColorCreamSurface),
                 shape = RoundedCornerShape(20.dp),
@@ -315,7 +514,7 @@ fun BotDuelSetupScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Text(
-                        text = "👾 Step 3: Choose Your Opponent Bot",
+                        text = "👾 Step 4: Choose Your Opponent Bot",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = ColorHeading
@@ -726,68 +925,284 @@ fun BotDuelPlayScreen(
                         colors = CardDefaults.cardColors(containerColor = ColorCreamSurface),
                         border = BorderStroke(2.dp, ColorCreamBorder),
                         shape = RoundedCornerShape(24.dp),
-                        modifier = Modifier.fillMaxWidth().weight(1.2f)
+                        modifier = Modifier.fillMaxWidth().weight(1.5f)
                     ) {
                         Column(
-                            modifier = Modifier.fillMaxSize().padding(16.dp),
+                            modifier = Modifier.fillMaxSize().padding(12.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
                         ) {
-                            // Subtitle of operational emojis
-                            Row(
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = currentQuestion.emojiCountVal1,
-                                    fontSize = 28.sp
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = when (currentQuestion.op) {
-                                        "+" -> "➕"
-                                        "-" -> "➖"
-                                        "*" -> "✖️"
-                                        else -> "➗"
-                                    },
-                                    fontSize = 20.sp
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = currentQuestion.emojiCountVal2,
-                                    fontSize = 28.sp
-                                )
-                            }
+                            Text(
+                                text = currentQuestion.title,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = ColorTealProgress,
+                                modifier = Modifier.padding(bottom = 6.dp)
+                            )
 
-                            Spacer(modifier = Modifier.height(16.dp))
+                            when (currentQuestion.visualStyle) {
+                                "equation" -> {
+                                    Row(
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = currentQuestion.emojiCountVal1,
+                                            fontSize = 28.sp
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = when (currentQuestion.op) {
+                                                "*" -> "✖️"
+                                                "/" -> "➗"
+                                                "+" -> "➕"
+                                                else -> "➖"
+                                            },
+                                            fontSize = 20.sp
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = currentQuestion.emojiCountVal2,
+                                            fontSize = 28.sp
+                                        )
+                                    }
 
-                            // Display Equation Formula
-                            Row(
-                                modifier = Modifier.fillMaxWidth().testTag("duel_question_text"),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "${currentQuestion.val1} ${currentQuestion.op} ${currentQuestion.val2} = ",
-                                    fontSize = 32.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = ColorHeading
-                                )
-                                
-                                Box(
-                                    modifier = Modifier
-                                        .size(60.dp)
-                                        .clip(CircleShape)
-                                        .background(ColorBg)
-                                        .border(2.dp, ColorCreamBorder, CircleShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = if (viewModel.duelUserSelectedOption != null) "${currentQuestion.correctAnswer}" else "❓",
-                                        fontSize = 26.sp,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        color = if (viewModel.duelUserSelectedOption != null) ColorGreenPrimary else Color(0xFFFF9800)
-                                    )
+                                    Spacer(modifier = Modifier.height(10.dp))
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().testTag("duel_question_text"),
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = currentQuestion.text,
+                                            fontSize = 28.sp,
+                                            fontWeight = FontWeight.ExtraBold,
+                                            color = ColorHeading
+                                        )
+                                        
+                                        Box(
+                                            modifier = Modifier
+                                                .size(54.dp)
+                                                .clip(CircleShape)
+                                                .background(ColorBg)
+                                                .border(2.dp, ColorCreamBorder, CircleShape),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = if (viewModel.duelUserSelectedOption != null) "${currentQuestion.correctAnswer}" else "❓",
+                                                fontSize = 24.sp,
+                                                fontWeight = FontWeight.ExtraBold,
+                                                color = if (viewModel.duelUserSelectedOption != null) ColorGreenPrimary else Color(0xFFFF9800)
+                                            )
+                                        }
+                                    }
+                                }
+                                "cubes" -> {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(
+                                            text = currentQuestion.text,
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = ColorHeading,
+                                            textAlign = TextAlign.Center,
+                                            modifier = Modifier.padding(bottom = 6.dp)
+                                        )
+                                        
+                                        Row(
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                            verticalAlignment = Alignment.Bottom,
+                                            modifier = Modifier.padding(vertical = 4.dp)
+                                        ) {
+                                            currentQuestion.cubesColumns.forEachIndexed { colIdx, colHeight ->
+                                                Column(
+                                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                                                ) {
+                                                    for (layerIdx in colHeight downTo 1) {
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .size(32.dp)
+                                                                .clip(RoundedCornerShape(4.dp))
+                                                                .background(Color(0xFFE91E63))
+                                                                .border(1.5.dp, Color(0xFFE91E63).copy(alpha = 0.8f), RoundedCornerShape(4.dp)),
+                                                            contentAlignment = Alignment.Center
+                                                        ) {
+                                                            Text("🧱", fontSize = 14.sp)
+                                                        }
+                                                    }
+                                                    Text(
+                                                        text = "${colHeight}",
+                                                        fontSize = 11.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = ColorTealProgress
+                                                    )
+                                                }
+                                            }
+                                        }
+
+                                        if (viewModel.duelUserSelectedOption != null) {
+                                            Text(
+                                                text = "Answer: ${currentQuestion.correctAnswer} (${currentQuestion.hint})",
+                                                fontSize = 12.sp,
+                                                color = ColorGreenPrimary,
+                                                fontWeight = FontWeight.Bold,
+                                                modifier = Modifier.padding(top = 4.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                                "sequence_carts" -> {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(
+                                            text = currentQuestion.text,
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = ColorHeading,
+                                            textAlign = TextAlign.Center,
+                                            modifier = Modifier.padding(bottom = 6.dp)
+                                        )
+
+                                        Row(
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.padding(vertical = 6.dp)
+                                        ) {
+                                            currentQuestion.sequenceList.forEach { valStr ->
+                                                val isMystery = valStr == "❓"
+                                                Card(
+                                                    colors = CardDefaults.cardColors(
+                                                        containerColor = if (isMystery) Color(0xFFFFCC80) else Color(0xFFE0F2F1)
+                                                    ),
+                                                    border = BorderStroke(2.dp, if (isMystery) Color(0xFFFF8F00) else Color(0xFF00B0FF)),
+                                                    shape = RoundedCornerShape(10.dp),
+                                                    modifier = Modifier.size(46.dp)
+                                                ) {
+                                                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                                        Text(
+                                                            text = if (isMystery && viewModel.duelUserSelectedOption != null) "${currentQuestion.correctAnswer}" else valStr,
+                                                            fontSize = 16.sp,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = if (isMystery) Color(0xFFE65100) else Color(0xFF006064)
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        if (viewModel.duelUserSelectedOption != null) {
+                                            Text(
+                                                text = "Pattern clue: ${currentQuestion.hint}",
+                                                fontSize = 12.sp,
+                                                color = ColorGreenPrimary,
+                                                fontWeight = FontWeight.Bold,
+                                                modifier = Modifier.padding(top = 4.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                                "compare_scale" -> {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(
+                                            text = currentQuestion.text,
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = ColorHeading,
+                                            textAlign = TextAlign.Center,
+                                            modifier = Modifier.padding(bottom = 6.dp)
+                                        )
+
+                                        Row(
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
+                                        ) {
+                                            Card(
+                                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                                border = BorderStroke(1.dp, ColorCreamBorder),
+                                                modifier = Modifier.weight(1f)
+                                            ) {
+                                                Column(
+                                                    modifier = Modifier.padding(6.dp),
+                                                    horizontalAlignment = Alignment.CenterHorizontally
+                                                ) {
+                                                    Text("Group A", fontSize = 10.sp, color = ColorTealProgress, fontWeight = FontWeight.Bold)
+                                                    var emojiLine = ""
+                                                    repeat(currentQuestion.compareCountLeft) { emojiLine += currentQuestion.compareEmojiLeft }
+                                                    Text(text = emojiLine, fontSize = 14.sp, maxLines = 1)
+                                                    Text("Value: ${currentQuestion.compareCountLeft}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = ColorHeading)
+                                                }
+                                            }
+
+                                            val tiltEmoji = when {
+                                                currentQuestion.compareCountLeft > currentQuestion.compareCountRight -> "⚖️ ◀️"
+                                                currentQuestion.compareCountLeft < currentQuestion.compareCountRight -> "⚖️ ▶️"
+                                                else -> "⚖️ ⏸️"
+                                            }
+                                            Text(
+                                                text = tiltEmoji,
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+
+                                            Card(
+                                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                                border = BorderStroke(1.dp, ColorCreamBorder),
+                                                modifier = Modifier.weight(1f)
+                                            ) {
+                                                Column(
+                                                    modifier = Modifier.padding(6.dp),
+                                                    horizontalAlignment = Alignment.CenterHorizontally
+                                                ) {
+                                                    Text("Group B", fontSize = 10.sp, color = ColorTealProgress, fontWeight = FontWeight.Bold)
+                                                    var emojiLine = ""
+                                                    repeat(currentQuestion.compareCountRight) { emojiLine += currentQuestion.compareEmojiRight }
+                                                    Text(text = emojiLine, fontSize = 14.sp, maxLines = 1)
+                                                    Text("Value: ${currentQuestion.compareCountRight}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = ColorHeading)
+                                                }
+                                            }
+                                        }
+
+                                        if (viewModel.duelUserSelectedOption != null) {
+                                            Text(
+                                                text = "Match analysis: ${currentQuestion.hint}",
+                                                fontSize = 12.sp,
+                                                color = ColorGreenPrimary,
+                                                fontWeight = FontWeight.Bold,
+                                                modifier = Modifier.padding(top = 4.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                                else -> {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(Color(0xFF2E3B4E))
+                                            .padding(12.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text(
+                                                text = currentQuestion.text,
+                                                color = Color.White,
+                                                fontSize = 15.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                textAlign = TextAlign.Center,
+                                                lineHeight = 20.sp
+                                            )
+                                            if (viewModel.duelUserSelectedOption != null) {
+                                                Text(
+                                                    text = "Correct: ${currentQuestion.correctAnswer} (${currentQuestion.hint})",
+                                                    fontSize = 12.sp,
+                                                    color = Color(0xFF81C784),
+                                                    fontWeight = FontWeight.Bold,
+                                                    modifier = Modifier.padding(top = 6.dp)
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }

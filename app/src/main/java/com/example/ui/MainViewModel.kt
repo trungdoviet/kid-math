@@ -48,6 +48,29 @@ data class MathQuestion(
     val emojiCountVal2: String = "🍏"
 )
 
+// Duel Game State
+data class DuelQuestion(
+    val category: String, // "Addition", "Subtraction", "Multiplication", "Division", "Cubes", "Sequences", "Compare", "WordQuest"
+    val title: String,
+    val text: String,
+    val visualStyle: String, // "equation", "cubes", "sequence_carts", "compare_scale", "word_ill"
+    val correctAnswer: Int,
+    val options: List<Int>,
+    val emojiCountVal1: String = "🍎",
+    val emojiCountVal2: String = "🍏",
+    val val1: Int = 0,
+    val val2: Int = 0,
+    val op: String = "+",
+    val cubesColumns: List<Int> = emptyList(), // Heights of stack columns
+    val sequenceList: List<String> = emptyList(), // e.g. ["2", "4", "❓", "8"]
+    val compareEmojiLeft: String = "🍒",
+    val compareCountLeft: Int = 0,
+    val compareEmojiRight: String = "🍇",
+    val compareCountRight: Int = 0,
+    val compareOpText: String = "", // "smaller than", "bigger than", "equal to"
+    val hint: String = ""
+)
+
 // Bot Opponent State for Custom Arithmetic Matches
 data class BotOpponent(
     val name: String,
@@ -253,10 +276,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     var duelOpSubtraction by mutableStateOf(false)
     var duelOpMultiplication by mutableStateOf(false)
     var duelOpDivision by mutableStateOf(false)
+    
+    // Extended Operations & Quests
+    var duelOpCubes by mutableStateOf(true)
+    var duelOpSequences by mutableStateOf(true)
+    var duelOpCompare by mutableStateOf(true)
+    var duelOpWordQuest by mutableStateOf(true)
 
     // Selection properties
     var duelRangeMin by mutableStateOf(0)
     var duelRangeMax by mutableStateOf(10)
+    
+    // Configure settings for extended quests
+    var duelCubesMaxHeight by mutableStateOf(3) // 2 to 5 columns stack depth
+    var duelSequencesDifficulty by mutableStateOf("All") // "Simple" or "All"
+    var duelCompareLimit by mutableStateOf(20) // up to 10 or 50 or 100
+    var duelWordQuestMax by mutableStateOf(20) // up to 20 or 50 or 100
+
     var duelDurationSeconds by mutableStateOf(120) // Default 2 minutes
     var selectedBot by mutableStateOf(BotOpponent("Pikachu", "⚡", "Easy", 8000L..12000L, 0.58f))
 
@@ -278,7 +314,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val duelBotRecent = androidx.compose.runtime.mutableStateListOf<Boolean>()
     var duelTimerRemaining by mutableStateOf(120)
     var duelBotStatusText by mutableStateOf("")
-    var duelCurrentQuestion by mutableStateOf<MathQuestion?>(null)
+    var duelCurrentQuestion by mutableStateOf<DuelQuestion?>(null)
     var duelUserSelectedOption by mutableStateOf<Int?>(null)
     var duelCoinsAwarded by mutableStateOf(0)
 
@@ -349,31 +385,44 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun generateNextDuelQuestion() {
-        val ops = mutableListOf<String>()
-        if (duelOpAddition) ops.add("+")
-        if (duelOpSubtraction) ops.add("-")
-        if (duelOpMultiplication) ops.add("*")
-        if (duelOpDivision) ops.add("/")
-        
-        if (ops.isEmpty()) ops.add("+") // Safe fallback
-        
-        val op = ops.random()
-        val min = duelRangeMin
-        val max = duelRangeMax
-        
-        val countingEmojis = when (op) {
-            "+" -> listOf("🍎", "🍓", "🍌", "🥕", "🏀", "🐞", "🚗", "🍬", "🦖", "🍦")
-            "-" -> listOf("🍇", "🍐", "🍑", "🍒", "⚽️", "🧸", "✈️", "🍭", "🍩", "🍪")
-            "*" -> listOf("🍏", "🍋", "🍍", "🥑", "🧁", "🍄", "⭐", "🎈", "🎲", "🧩")
-            else -> listOf("🍊", "🍉", "🍒", "🥝", "🍩", "🔔", "🪁", "🎁", "🎨", "🧶")
+        val activeCategories = mutableListOf<String>()
+        if (duelOpAddition) activeCategories.add("Addition")
+        if (duelOpSubtraction) activeCategories.add("Subtraction")
+        if (duelOpMultiplication) activeCategories.add("Multiplication")
+        if (duelOpDivision) activeCategories.add("Division")
+        if (duelOpCubes) activeCategories.add("Cubes")
+        if (duelOpSequences) activeCategories.add("Sequences")
+        if (duelOpCompare) activeCategories.add("Compare")
+        if (duelOpWordQuest) activeCategories.add("WordQuest")
+
+        if (activeCategories.isEmpty()) {
+            activeCategories.add("Addition") // Fallback
         }
-        
+
+        val category = activeCategories.random()
+        var title = "Math Battle! ⚔️"
+        var text = ""
+        var visualStyle = "equation"
+        var correctAnswer = 0
         var val1 = 0
         var val2 = 0
-        var correctAns = 0
+        var op = "+"
+        var cubesColList = emptyList<Int>()
+        var seqList = emptyList<String>()
+        var compEmojiL = "🍒"
+        var compCountL = 0
+        var compEmojiR = "🍇"
+        var compCountR = 0
+        var compOpText = ""
+        var emojiVal1 = "🔴"
+        var emojiVal2 = "🔵"
+        var hint = ""
 
-        when (op) {
-            "+" -> {
+        when (category) {
+            "Addition" -> {
+                title = "Super Addition! ➕"
+                val min = duelRangeMin
+                val max = duelRangeMax
                 if (min == 0) {
                     val1 = Random.nextInt(0, max + 1)
                     val2 = Random.nextInt(0, (max - val1).coerceAtLeast(1))
@@ -381,9 +430,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     val1 = Random.nextInt(min, max - 1)
                     val2 = Random.nextInt(1, (max - val1).coerceAtLeast(2))
                 }
-                correctAns = val1 + val2
+                correctAnswer = val1 + val2
+                text = "$val1 + $val2 = "
+                visualStyle = "equation"
+                op = "+"
+                emojiVal1 = listOf("🍎", "🍓", "🍌", "🥕", "🏀", "🐞").random()
+                emojiVal2 = emojiVal1
             }
-            "-" -> {
+            "Subtraction" -> {
+                title = "Super Subtraction! ➖"
+                val min = duelRangeMin
+                val max = duelRangeMax
                 if (min == 0) {
                     val1 = Random.nextInt(1, max + 1)
                     val2 = Random.nextInt(0, val1 + 1)
@@ -391,17 +448,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     val1 = Random.nextInt(min + 2, max + 1)
                     val2 = Random.nextInt(1, (val1 - min).coerceAtLeast(2))
                 }
-                correctAns = val1 - val2
+                correctAnswer = val1 - val2
+                text = "$val1 - $val2 = "
+                visualStyle = "equation"
+                op = "-"
+                emojiVal1 = listOf("🍇", "🍐", "🍑", "🍒", "🧸", "🍪").random()
+                emojiVal2 = emojiVal1
             }
-            "*" -> {
+            "Multiplication" -> {
+                title = "Challenger Multiplication! ✖️"
+                val max = duelRangeMax
+                val min = duelRangeMin
                 var success = false
                 var attempts = 0
                 val localMin = if (min == 0) 1 else min
                 while (!success && attempts < 100) {
                     val1 = Random.nextInt(1, (max / 2 + 1).coerceAtLeast(3))
                     val2 = Random.nextInt(1, (max / 2 + 1).coerceAtLeast(3))
-                    correctAns = val1 * val2
-                    if (correctAns in localMin..max) {
+                    correctAnswer = val1 * val2
+                    if (correctAnswer in localMin..max) {
                         success = true
                     }
                     attempts++
@@ -409,39 +474,377 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 if (!success) {
                     val1 = 2
                     val2 = 3
-                    correctAns = 6
+                    correctAnswer = 6
                 }
+                text = "$val1 × $val2 = "
+                visualStyle = "equation"
+                op = "*"
+                emojiVal1 = listOf("🍏", "🍋", "🍍", "🥑", "⭐", "🎈").random()
+                emojiVal2 = emojiVal1
             }
-            "/" -> {
+            "Division" -> {
+                title = "Division Kingdom! ➗"
+                val min = duelRangeMin
+                val max = duelRangeMax
                 val localMin = if (min == 0) 1 else min
-                correctAns = Random.nextInt(localMin, max + 1)
+                correctAnswer = Random.nextInt(localMin, max + 1)
                 val2 = when {
-                    correctAns > 20 -> Random.nextInt(1, 4)
-                    correctAns > 10 -> Random.nextInt(1, 5)
+                    correctAnswer > 20 -> Random.nextInt(1, 4)
+                    correctAnswer > 10 -> Random.nextInt(1, 5)
                     else -> Random.nextInt(2, 6)
                 }
-                val1 = correctAns * val2
+                val1 = correctAnswer * val2
+                text = "$val1 ÷ $val2 = "
+                visualStyle = "equation"
+                op = "/"
+                emojiVal1 = listOf("🍊", "🍉", "🍒", "🍩", "🎁", "🪁").random()
+                emojiVal2 = emojiVal1
+            }
+            "Cubes" -> {
+                title = "Cube Arena 🧱"
+                visualStyle = "cubes"
+                val colsCount = Random.nextInt(3, 6) // Generates 3 to 5 columns
+                val colHeights = MutableList(colsCount) { Random.nextInt(1, duelCubesMaxHeight + 1) }
+                cubesColList = colHeights
+
+                val totalCubes = colHeights.sum()
+                val variation = Random.nextInt(1, 7) // 6 variations
+
+                when (variation) {
+                    1 -> {
+                        text = "Count the total cubes in this stack columns layout!"
+                        correctAnswer = totalCubes
+                        hint = "Count each column layer height: ${colHeights.joinToString(" + ")}"
+                    }
+                    2 -> {
+                        val blockTarget = colsCount * 3
+                        text = "If we want to build a perfect set of $blockTarget cubes, how many more cubes do we need to add to these $totalCubes cubes?"
+                        correctAnswer = (blockTarget - totalCubes).coerceAtLeast(1)
+                        hint = "Target minus current cubes: $blockTarget - $totalCubes"
+                    }
+                    3 -> {
+                        text = "If we double this exact stack of cubes, what would be the total number of cubes?"
+                        correctAnswer = totalCubes * 2
+                        hint = "Total cubes * 2 = $totalCubes × 2"
+                    }
+                    4 -> {
+                        val toSub = Random.nextInt(1, 3).coerceAtMost(totalCubes - 1)
+                        text = "If we remove exactly $toSub cubes from the top layers, how many cubes will remain?"
+                        correctAnswer = totalCubes - toSub
+                        hint = "$totalCubes - $toSub = ${totalCubes - toSub}"
+                    }
+                    5 -> {
+                        text = "How many columns in this stack have a height of exactly 1 cube?"
+                        correctAnswer = colHeights.count { it == 1 }
+                        hint = "Look for columns that are only 1 cube tall!"
+                    }
+                    else -> {
+                        text = "What is the tallest column height in this cube stack?"
+                        correctAnswer = colHeights.maxOrNull() ?: 1
+                        hint = "Look for the tallest column among the heights!"
+                    }
+                }
+            }
+            "Sequences" -> {
+                title = "Find the Pattern 🚂"
+                visualStyle = "sequence_carts"
+                val variation = Random.nextInt(1, 11) // 10 variations
+                val isHard = duelSequencesDifficulty == "All"
+
+                when (variation) {
+                    1 -> {
+                        val start = Random.nextInt(1, 15)
+                        val seq = listOf(start, start + 1, start + 2, start + 3, start + 4)
+                        val holeIndex = Random.nextInt(1, 4)
+                        correctAnswer = seq[holeIndex]
+                        seqList = seq.mapIndexed { idx, v -> if (idx == holeIndex) "❓" else "$v" }
+                        text = "What number completes this simple sequence?"
+                        hint = "The numbers go up by 1 each step."
+                    }
+                    2 -> {
+                        val start = Random.nextInt(1, 12) * 2
+                        val seq = listOf(start, start + 2, start + 4, start + 6, start + 8)
+                        val holeIndex = Random.nextInt(1, 4)
+                        correctAnswer = seq[holeIndex]
+                        seqList = seq.mapIndexed { idx, v -> if (idx == holeIndex) "❓" else "$v" }
+                        text = "Find the pattern to fill the correct number!"
+                        hint = "The numbers go up by 2 each step."
+                    }
+                    3 -> {
+                        val start = Random.nextInt(1, 10) * 5
+                        val seq = listOf(start, start + 5, start + 10, start + 15, start + 20)
+                        val holeIndex = Random.nextInt(1, 4)
+                        correctAnswer = seq[holeIndex]
+                        seqList = seq.mapIndexed { idx, v -> if (idx == holeIndex) "❓" else "$v" }
+                        text = "Which missing term fits the skip pattern?"
+                        hint = "We are skip counting by 5s!"
+                    }
+                    4 -> {
+                        val start = Random.nextInt(10, 25)
+                        val seq = listOf(start, start - 1, start - 2, start - 3, start - 4)
+                        val holeIndex = Random.nextInt(1, 4)
+                        correctAnswer = seq[holeIndex]
+                        seqList = seq.mapIndexed { idx, v -> if (idx == holeIndex) "❓" else "$v" }
+                        text = "Solve the backward descending number sequence!"
+                        hint = "The numbers are shrinking by 1."
+                    }
+                    5 -> {
+                        val start = Random.nextInt(12, 30)
+                        val seq = listOf(start, start - 2, start - 4, start - 6, start - 8)
+                        val holeIndex = Random.nextInt(1, 4)
+                        correctAnswer = seq[holeIndex]
+                        seqList = seq.mapIndexed { idx, v -> if (idx == holeIndex) "❓" else "$v" }
+                        text = "Complete the backward counting pattern!"
+                        hint = "The numbers shrink by 2."
+                    }
+                    6 -> {
+                        if (isHard) {
+                            val seq = listOf(2, 4, 8, 16, 32)
+                            val holeIndex = Random.nextInt(2, 5)
+                            correctAnswer = seq[holeIndex]
+                            seqList = seq.mapIndexed { idx, v -> if (idx == holeIndex) "❓" else "$v" }
+                            text = "Find the multiplying double pattern!"
+                            hint = "Each number is doubled!"
+                        } else {
+                            val seq = listOf(3, 6, 9, 12, 15)
+                            val holeIndex = Random.nextInt(1, 4)
+                            correctAnswer = seq[holeIndex]
+                            seqList = seq.mapIndexed { idx, v -> if (idx == holeIndex) "❓" else "$v" }
+                            text = "What is the missing multiple of 3?"
+                            hint = "Skip count by 3s."
+                        }
+                    }
+                    7 -> {
+                        if (isHard) {
+                            val seq = listOf(1, 2, 3, 5, 8, 13)
+                            val holeIndex = 4
+                            correctAnswer = seq[holeIndex]
+                            seqList = seq.mapIndexed { idx, v -> if (idx == holeIndex) "❓" else "$v" }
+                            text = "Add the two previous numbers to find the next!"
+                            hint = "1+2=3, 2+3=5, 3+5=?"
+                        } else {
+                            val seq = listOf(10, 15, 20, 25, 30)
+                            val holeIndex = 2
+                            correctAnswer = 20
+                            seqList = seq.mapIndexed { idx, v -> if (idx == holeIndex) "❓" else "$v" }
+                            text = "Find the missing number in the sequence!"
+                            hint = "Skip count by 5s."
+                        }
+                    }
+                    8 -> {
+                        val isEvenVal = Random.nextBoolean()
+                        val constantVal = if (isEvenVal) 10 else 12
+                        val seriesStep = listOf(1, constantVal, 2, constantVal, 3, constantVal, 4)
+                        correctAnswer = 3
+                        seqList = seriesStep.mapIndexed { idx, v -> if (idx == 4) "❓" else "$v" }
+                        text = "Look closely at the alternating patterns!"
+                        hint = "Alternates between a climbing number (1, 2, ?, 4) and $constantVal."
+                    }
+                    9 -> {
+                        if (isHard) {
+                            correctAnswer = 9
+                            seqList = listOf("1", "3", "❓", "27")
+                            text = "Determine the missing geometric multiple of 3!"
+                            hint = "Multiply by 3 each time."
+                        } else {
+                            correctAnswer = 30
+                            seqList = listOf("10", "20", "❓", "40", "50")
+                            text = "Find the missing sequence number!"
+                            hint = "Counting by 10s."
+                        }
+                    }
+                    else -> {
+                        correctAnswer = 9
+                        seqList = listOf("2", "5", "4", "7", "6", "❓")
+                        text = "Identify the shifting pattern (+3 then -1)!"
+                        hint = "2 + 3 = 5; 5 - 1 = 4;"
+                    }
+                }
+            }
+            "Compare" -> {
+                title = "Scale Battle ⚖️"
+                visualStyle = "compare_scale"
+                val limit = duelCompareLimit
+                val variation = Random.nextInt(1, 9)
+
+                when (variation) {
+                    1 -> {
+                        compEmojiL = listOf("🍒", "🍓", "🍎").random()
+                        compEmojiR = listOf("🍇", "🍍", "🥑").random()
+                        compCountL = Random.nextInt(4, 9)
+                        compCountR = Random.nextInt(4, 9)
+                        while (compCountL == compCountR) {
+                            compCountR = Random.nextInt(4, 9)
+                        }
+                        text = "How many more $compEmojiL are there than $compEmojiR?"
+                        correctAnswer = kotlin.math.abs(compCountL - compCountR)
+                        hint = "Count and subtract smaller from larger: $compCountL vs $compCountR."
+                    }
+                    2 -> {
+                        val v1 = Random.nextInt(10, (limit - 1).coerceAtLeast(11))
+                        val v2 = Random.nextInt(v1 + 1, (limit + 5).coerceAtLeast(15))
+                        compCountL = v1
+                        compCountR = v2
+                        text = "$v2 is bigger than $v1 by how many units?"
+                        correctAnswer = v2 - v1
+                        hint = "$v2 - $v1 = ${v2 - v1}"
+                    }
+                    3 -> {
+                        compCountL = Random.nextInt(4, 10) * 2
+                        compCountR = compCountL + Random.nextInt(2, 5) * 2
+                        text = "Group A has $compCountL coins, Group B has $compCountR coins. How many coins should Group B give Group A so they have equal coins?"
+                        correctAnswer = (compCountR - compCountL) / 2
+                        hint = "Let's share equally: (${compCountR} - ${compCountL}) ÷ 2 = $correctAnswer."
+                    }
+                    4 -> {
+                        val valInput = Random.nextInt(3, (limit / 2).coerceAtLeast(6))
+                        compCountL = valInput
+                        text = "What is the DOUBLE of $valInput?"
+                        correctAnswer = valInput * 2
+                        hint = "$valInput × 2 = ${valInput * 2}"
+                    }
+                    5 -> {
+                        val valInput = Random.nextInt(2, (limit / 2).coerceAtLeast(5)) * 2
+                        compCountL = valInput
+                        text = "What is HALF of $valInput?"
+                        correctAnswer = valInput / 2
+                        hint = "$valInput ÷ 2 = ${valInput / 2}"
+                    }
+                    6 -> {
+                        val weightPerBox = Random.nextInt(2, 6)
+                        correctAnswer = Random.nextInt(3, 7)
+                        val totalWeight = weightPerBox * correctAnswer
+                        text = "A heavy box weighs ${weightPerBox}kg. How many of these boxes are needed to balance a giant weight of ${totalWeight}kg?"
+                        hint = "$totalWeight ÷ $weightPerBox = $correctAnswer"
+                    }
+                    7 -> {
+                        val cats = Random.nextInt(2, 5)
+                        text = "If 1 cat has exactly 4 legs, how many legs do $cats cats have in total?"
+                        correctAnswer = cats * 4
+                        hint = "$cats × 4 = ${cats * 4}"
+                    }
+                    else -> {
+                        val valChoice = Random.nextInt(3, 20)
+                        correctAnswer = if (valChoice % 2 == 0) valChoice + 1 else valChoice
+                        text = "Identify which number is an ODD number!"
+                        hint = "Odd numbers end with 1, 3, 5, 7, 9."
+                    }
+                }
+            }
+            else -> {
+                title = "Puzzle Word Quest 🧩"
+                visualStyle = "word_ill"
+                val limit = duelWordQuestMax
+                val variation = Random.nextInt(1, 11)
+
+                when (variation) {
+                    1 -> {
+                        val base = listOf(11, 13, 15, 17, 19).random().coerceAtMost(limit)
+                        text = "What is the odd number right before $base?"
+                        correctAnswer = base - 2
+                        hint = "Count backward by 2 odd steps: $base -> ${base - 2}."
+                    }
+                    2 -> {
+                        val base = listOf(10, 12, 14, 16, 18).random().coerceAtMost(limit)
+                        text = "What is the even number right after $base?"
+                        correctAnswer = base + 2
+                        hint = "Count forward by 2 even steps: $base -> ${base + 2}."
+                    }
+                    3 -> {
+                        val base = Random.nextInt(5, limit - 3)
+                        text = "Which number is bigger than $base by exactly 2 units?"
+                        correctAnswer = base + 2
+                        hint = "$base + 2 = ${base + 2}."
+                    }
+                    4 -> {
+                        val base = Random.nextInt(10, limit)
+                        val toSub = Random.nextInt(2, 6)
+                        text = "Which number is smaller than $base by exactly $toSub units?"
+                        correctAnswer = base - toSub
+                        hint = "$base - $toSub = ${base - toSub}."
+                    }
+                    5 -> {
+                        val base = Random.nextInt(10, limit)
+                        text = "Which number comes directly before $base in the sequence?"
+                        correctAnswer = base - 1
+                        hint = "$base - 1 = ${base - 1}."
+                    }
+                    6 -> {
+                        val base = Random.nextInt(10, limit - 1)
+                        text = "Which number comes directly after $base in the sequence?"
+                        correctAnswer = base + 1
+                        hint = "$base + 1 = ${base + 1}."
+                    }
+                    7 -> {
+                        text = "What is the third odd number starting from 1 (1, 3, 5...)?"
+                        correctAnswer = 5
+                        hint = "1st is 1, 2nd is 3, 3rd is 5."
+                    }
+                    8 -> {
+                        text = "What is the second even number starting from 10 (10, 12...)?"
+                        correctAnswer = 12
+                        hint = "1st is 10, 2nd is 12."
+                    }
+                    9 -> {
+                        val start = listOf(11, 21, 31).random().coerceAtMost(limit - 4)
+                        val end = start + 4
+                        text = "Between $start and $end, which is the middle odd number?"
+                        correctAnswer = start + 2
+                        hint = "The sequence is: $start, ${start+1}, ${start+2}, ${start+3}, $end."
+                    }
+                    else -> {
+                        val startDay = Random.nextInt(2, 5)
+                        val daysLater = Random.nextInt(2, 4)
+                        text = "If today is day $startDay of the week, what day number is it $daysLater days later?"
+                        correctAnswer = startDay + daysLater
+                        hint = "$startDay + $daysLater = ${startDay + daysLater}."
+                    }
+                }
             }
         }
 
-        val optionsSet = mutableSetOf(correctAns)
-        while (optionsSet.size < 4) {
-            val offset = Random.nextInt(-5, 6)
-            val distractor = correctAns + offset
-            if (distractor >= 0 && distractor != correctAns && distractor <= (max * 1.5).toInt()) {
+        // Generate options (1 correct, 3 unique distractors)
+        val optionsSet = mutableSetOf(correctAnswer)
+        var attempts = 0
+        while (optionsSet.size < 4 && attempts < 100) {
+            val offset = Random.nextInt(-6, 7)
+            val distractor = correctAnswer + offset
+            if (distractor >= 0 && distractor != correctAnswer) {
                 optionsSet.add(distractor)
             }
+            attempts++
+        }
+        var forceOffset = 1
+        while (optionsSet.size < 4) {
+            val dist = correctAnswer + forceOffset
+            if (dist >= 0) {
+                optionsSet.add(dist)
+            } else {
+                optionsSet.add(correctAnswer - forceOffset)
+            }
+            forceOffset++
         }
 
-        val emoji = countingEmojis.random()
-        duelCurrentQuestion = MathQuestion(
+        duelCurrentQuestion = DuelQuestion(
+            category = category,
+            title = title,
+            text = text,
+            visualStyle = visualStyle,
+            correctAnswer = correctAnswer,
+            options = optionsSet.toList().shuffled(),
+            emojiCountVal1 = emojiVal1,
+            emojiCountVal2 = emojiVal2,
             val1 = val1,
             val2 = val2,
             op = op,
-            correctAnswer = correctAns,
-            options = optionsSet.toList().shuffled(),
-            emojiCountVal1 = emoji,
-            emojiCountVal2 = emoji
+            cubesColumns = cubesColList,
+            sequenceList = seqList,
+            compareEmojiLeft = compEmojiL,
+            compareCountLeft = compCountL,
+            compareEmojiRight = compEmojiR,
+            compareCountRight = compCountR,
+            compareOpText = compOpText,
+            hint = hint
         )
         duelUserSelectedOption = null
     }

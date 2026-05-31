@@ -64,6 +64,10 @@ class ExampleRobolectricTest {
     model.duelOpSubtraction = false
     model.duelOpMultiplication = true
     model.duelOpDivision = true
+    model.duelOpCubes = false
+    model.duelOpSequences = false
+    model.duelOpCompare = false
+    model.duelOpWordQuest = false
     model.duelRangeMin = 0
     model.duelRangeMax = 30
 
@@ -77,6 +81,10 @@ class ExampleRobolectricTest {
   fun `validate submit duel answer tracks score and loads next question`() {
     val model = MainViewModel(ApplicationProvider.getApplicationContext())
     model.duelOpAddition = true
+    model.duelOpCubes = false
+    model.duelOpSequences = false
+    model.duelOpCompare = false
+    model.duelOpWordQuest = false
     model.duelRangeMin = 0
     model.duelRangeMax = 10
     
